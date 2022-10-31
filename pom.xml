@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.blackbeard334</groupId>
+    <artifactId>lzfse47j</artifactId>
+    <version>0.2-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <!-- META -->
+    <name>lzfse47j</name>
+    <description>Java bindings for the LZFSE C reference implementation.</description>
+    <url>https://github.com/blackbeard334/lzfse47j</url>
+
+    <licenses>
+        <license>
+            <name>BSD 3-Clause "New" or "Revised" License</name>
+            <url>https://opensource.org/licenses/BSD-3-Clause</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>blackbeard334</name>
+            <email>blackbeard334@protonmail.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com/blackbeard334/lzfse47j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/blackbeard334/lzfse47j.git</developerConnection>
+        <url>http://github.com/blackbeard334/lzfse47j/tree/master</url>
+    </scm>
+    <!--END OF META-->
+
+    <properties>
+        <nativeSourceDirectory>${project.basedir}/src/main/native/lzfse_jni</nativeSourceDirectory>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.8.0-RC1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-surefire-plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M7</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>natives-linux</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>make</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <exec executable="cmake" dir="${project.build.directory}" failonerror="true">
+                                            <arg line="${nativeSourceDirectory}"/>
+                                        </exec>
+                                        <exec executable="cmake" dir="${project.build.directory}" failonerror="true">
+                                            <arg line="--build . --clean-first --target lzfse_jni"/>
+                                        </exec>
+
+                                        <copy toDir="${project.basedir}/src/main/resources">
+                                            <fileset dir="${project.build.directory}/lzfse" includes="*.so"/>
+                                            <fileset dir="${project.build.directory}" includes="*.so"/>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>natives-linux</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>natives-linux</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>natives-windows</id>
+            <properties>
+                <cmake.config>Release</cmake.config>
+                <windows.cmake.path>cmake</windows.cmake.path>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>make</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <exec executable="${windows.cmake.path}" dir="${project.build.directory}" failonerror="true">
+                                            <arg line="${nativeSourceDirectory}"/>
+                                        </exec>
+                                        <exec executable="${windows.cmake.path}" dir="${project.build.directory}" failonerror="true">
+                                            <arg line="--build . --clean-first --target lzfse_jni --config ${cmake.config}"/>
+                                        </exec>
+
+                                        <copy toDir="${project.basedir}/src/main/resources">
+                                            <fileset dir="${project.build.directory}/lzfse/${cmake.config}" includes="*.dll"/>
+                                            <fileset dir="${project.build.directory}/${cmake.config}" includes="*.dll"/>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>natives-windows</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>natives-windows</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
